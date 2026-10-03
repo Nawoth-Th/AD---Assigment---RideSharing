@@ -1,0 +1,27 @@
+server:
+  port: ${ACCOUNT_SERVICE_PORT:8081}
+
+spring:
+  application:
+    name: account-service
+  data:
+    mongodb:
+      uri: ${ACCOUNT_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/ridelink_account_db}}
+      database: ridelink_account_db
+      auto-index-creation: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:RideLinkSuperSecretSecurityKeyForJwtAuthenticationTokens2026!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 Hours
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.ridelink.account: DEBUG
+    org.springframework.data.mongodb: INFO
