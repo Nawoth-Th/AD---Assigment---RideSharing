@@ -1,0 +1,22 @@
+server:
+  port: ${DRIVER_SERVICE_PORT:8082}
+
+spring:
+  application:
+    name: driver-service
+  data:
+    mongodb:
+      uri: ${DRIVER_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/ridelink_driver_db}}
+      database: ridelink_driver_db
+      auto-index-creation: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.ridelink.driver: DEBUG
+    org.springframework.data.mongodb: INFO
