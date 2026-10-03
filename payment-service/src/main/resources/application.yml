@@ -1,0 +1,29 @@
+server:
+  port: ${PAYMENT_SERVICE_PORT:8084}
+
+spring:
+  application:
+    name: payment-service
+  data:
+    mongodb:
+      uri: ${PAYMENT_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/ridelink_payment_db}}
+      database: ridelink_payment_db
+      auto-index-creation: true
+
+app:
+  fare:
+    base-fare: 200.0
+    per-km-rate: 80.0
+    surge-multiplier: 1.0
+    currency: LKR
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    com.ridelink.payment: DEBUG
+    org.springframework.data.mongodb: INFO
