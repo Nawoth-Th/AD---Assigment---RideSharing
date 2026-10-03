@@ -1,7 +1,7 @@
 # RideLink — Backend Microservices for a Ride-Sharing Platform
 
 **Module**: IT3130 – Application Development  
-**Assessment**: Group Assignment (30%)  
+**Assessment**: Group Assignment  
 **Faculty**: Faculty of Computing, Department of Information Technology  
 
 ---
