@@ -1,9 +1,7 @@
 package com.ridelink.driver.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -14,8 +12,6 @@ import java.time.Instant;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Document(collection = "drivers")
 public class DriverProfile {
 
@@ -50,4 +46,25 @@ public class DriverProfile {
 
     @LastModifiedDate
     private Instant updatedAt;
+
+    public DriverProfile() {
+        this.rating = 5.0;
+        this.totalRides = 0;
+        this.availabilityStatus = AvailabilityStatus.OFFLINE;
+    }
+
+    public DriverProfile(String id, String userId, String licenseNumber, int experienceYears, double rating, int totalRides, AvailabilityStatus availabilityStatus, String serviceArea, Vehicle vehicle, Location currentLocation, Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.userId = userId;
+        this.licenseNumber = licenseNumber;
+        this.experienceYears = experienceYears;
+        this.rating = rating;
+        this.totalRides = totalRides;
+        this.availabilityStatus = availabilityStatus != null ? availabilityStatus : AvailabilityStatus.OFFLINE;
+        this.serviceArea = serviceArea;
+        this.vehicle = vehicle;
+        this.currentLocation = currentLocation;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
 }

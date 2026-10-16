@@ -8,7 +8,6 @@ import com.ridelink.payment.exception.ResourceNotFoundException;
 import com.ridelink.payment.model.Payment;
 import com.ridelink.payment.model.PaymentStatus;
 import com.ridelink.payment.repository.PaymentRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,10 +21,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+
+    public PaymentService(PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
 
     @Value("${app.fare.currency:LKR}")
     private String currency;

@@ -40,6 +40,30 @@ public class DriverServiceClient {
         }
     }
 
+    public void notifyDriverTripStarted(String driverId) {
+        try {
+            log.info("Interservice Call -> Driver Service: POST /api/v1/drivers/{}/start-trip", driverId);
+            driverRestClient.post()
+                    .uri("/api/v1/drivers/{id}/start-trip", driverId)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (Exception ex) {
+            log.warn("Could not notify driver service of trip start for driver {}: {}", driverId, ex.getMessage());
+        }
+    }
+
+    public void notifyDriverReleased(String driverId) {
+        try {
+            log.info("Interservice Call -> Driver Service: POST /api/v1/drivers/{}/release", driverId);
+            driverRestClient.post()
+                    .uri("/api/v1/drivers/{id}/release", driverId)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (Exception ex) {
+            log.warn("Could not notify driver service to release driver {}: {}", driverId, ex.getMessage());
+        }
+    }
+
     public void notifyDriverRideCompleted(String driverId) {
         try {
             log.info("Interservice Call -> Driver Service: POST /api/v1/drivers/{}/complete-ride", driverId);

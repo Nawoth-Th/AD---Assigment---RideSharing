@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "app.services.driver-service-url",
+      "type": "java.lang.String",
+      "description": "Base HTTP URL of the Driver and Vehicle microservice"
+    },
+    {
+      "name": "app.services.payment-service-url",
+      "type": "java.lang.String",
+      "description": "Base HTTP URL of the Fare and Payment microservice"
+    },
+    {
+      "name": "app.services.account-service-url",
+      "type": "java.lang.String",
+      "description": "Base HTTP URL of the Account and Identity microservice"
+    }
+  ]
+}

@@ -11,7 +11,6 @@ import com.ridelink.driver.model.AvailabilityStatus;
 import com.ridelink.driver.model.DriverProfile;
 import com.ridelink.driver.model.Location;
 import com.ridelink.driver.repository.DriverProfileRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +21,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DriverService {
 
     private final DriverProfileRepository driverProfileRepository;
+
+    public DriverService(DriverProfileRepository driverProfileRepository) {
+        this.driverProfileRepository = driverProfileRepository;
+    }
 
     public DriverResponse createProfile(CreateDriverProfileRequest request) {
         log.info("Creating driver operational profile for userId: {}", request.getUserId());
@@ -143,6 +145,24 @@ public class DriverService {
         return resultList.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public void startTrip(String driverId) {
+        log.info("Setting driver {} status to ON_TRIP", driverId);
+        driverProfileRepository.findById(driverId).ifPresent(profile -> {
+            profile.setAvailabilityStatus(AvailabilityStatus.ON_TRIP);
+            profile.setUpdatedAt(Instant.now());
+            driverProfileRepository.save(profile);
+        });
+    }
+
+    public void releaseDriver(String driverId) {
+        log.info("Releasing driver {} status back to AVAILABLE without incrementing total rides", driverId);
+        driverProfileRepository.findById(driverId).ifPresent(profile -> {
+            profile.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+            profile.setUpdatedAt(Instant.now());
+            driverProfileRepository.save(profile);
+        });
     }
 
     public void incrementRidesCompleted(String driverId) {

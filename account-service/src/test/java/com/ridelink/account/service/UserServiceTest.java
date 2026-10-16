@@ -90,4 +90,16 @@ class UserServiceTest {
 
         assertEquals(AccountStatus.SUSPENDED, response.getStatus());
     }
+
+    @Test
+    @DisplayName("Should retrieve all users")
+    void testGetAllUsers() {
+        when(userRepository.findAll()).thenReturn(java.util.List.of(sampleUser));
+
+        java.util.List<UserProfileResponse> users = userService.getAllUsers();
+
+        assertNotNull(users);
+        assertEquals(1, users.size());
+        assertEquals("user-123", users.get(0).getId());
+    }
 }

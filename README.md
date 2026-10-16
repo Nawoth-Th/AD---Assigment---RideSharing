@@ -1,7 +1,7 @@
 # RideLink — Backend Microservices for a Ride-Sharing Platform
 
 **Module**: IT3130 – Application Development  
-**Assessment**: Group Assignment  
+**Assessment**: Group Assignment (30%)  
 **Faculty**: Faculty of Computing, Department of Information Technology  
 
 ---
@@ -28,7 +28,9 @@ Each team member is the primary owner of one core microservice as required by th
 - **Authentication**: Stateless HMAC-SHA256 JWT tokens & BCrypt password hashing
 - **Interservice Communication**: Synchronous REST via Spring `RestClient` with structured fallbacks
 - **Continuous Integration**: GitHub Actions CI (`.github/workflows/ci.yml`) automatically building and testing all 4 microservices
-- **Quality Assurance**: Unit tests with JUnit 5 & Mockito (28 unit tests, 100% pass rate)
+- **Quality Assurance**: Unit tests with JUnit 5 & Mockito (**53 unit tests, 100% pass rate**)
+- **Comprehensive Documentation**: Academic Technical Report ([`docs/IT3130_RideLink_Technical_Report.md`](file:///docs/IT3130_RideLink_Technical_Report.md)) & Architecture & Sequence Diagrams ([`docs/architecture_and_sequence_diagrams.md`](file:///docs/architecture_and_sequence_diagrams.md))
+- **Postman API Suite**: 47 automated requests covering happy paths, edge cases, and explicit negative scenarios with variable chaining
 
 ---
 
@@ -120,30 +122,57 @@ The repository includes pre-configured Postman artifacts located in `postman/`:
 
 ### Test Execution Sequence
 
-The collection includes test scripts that dynamically transfer generated IDs and JWT tokens between requests:
+The collection contains **47 requests** with automated test scripts that dynamically transfer generated IDs and JWT tokens between requests:
 
-1. **Account Service**:
+1. **Account Service (14 requests)**:
    - `Register Passenger` $\rightarrow$ extracts `passengerId` & `authToken`.
    - `Register Driver Account` $\rightarrow$ extracts `driverUserId`.
+   - `Register Admin Account` $\rightarrow$ extracts `adminUserId` & `adminAuthToken`.
    - `Login Passenger` & `Validate Auth Token`.
+   - `Get User Profile` by ID.
+   - `Admin - Get All Users` (requires `ADMIN` role or Bearer token).
+   - `Admin - Update User Status` (`SUSPENDED` / `ACTIVE`).
    - `[Negative] Duplicate Email Registration` $\rightarrow$ verifies `409 Conflict`.
    - `[Negative] Login with Invalid Password` $\rightarrow$ verifies `401 Unauthorized`.
-2. **Driver & Vehicle Service**:
+   - `[Negative] Unauthorised Access - Non-Admin Accessing User List` $\rightarrow$ verifies `403 Forbidden`.
+   - `[Negative] Invalid Input - Registration with Invalid Email` $\rightarrow$ verifies `400 Bad Request`.
+   - `[Negative] Token Validation Failed - Invalid Token` $\rightarrow$ verifies `401 Unauthorized`.
+2. **Driver & Vehicle Service (11 requests)**:
    - `Create Driver Operational Profile` $\rightarrow$ registers vehicle and sets service area to `Colombo`.
    - `Update Driver Location` $\rightarrow$ sets simulated coordinates (6.9271, 79.8612).
    - `Set Driver Availability to AVAILABLE`.
    - `Get Eligible Available Drivers` $\rightarrow$ returns active driver.
-3. **Fare & Payment Service**:
+   - `Driver Starts Trip` $\rightarrow$ transitions status to `ON_TRIP`.
+   - `Driver Released from Trip` $\rightarrow$ restores status to `AVAILABLE` without incrementing rides.
+   - `Increment Driver Rides Completed` $\rightarrow$ increments `totalRidesCompleted` and sets `AVAILABLE`.
+   - `Update Driver Vehicle Details` $\rightarrow$ updates vehicle specifications.
+   - `Get Driver Profile by User ID`.
+   - `[Negative] Duplicate Driver License Registration` $\rightarrow$ verifies `409 Conflict`.
+   - `[Negative] Driver Profile Not Found` $\rightarrow$ verifies `404 Not Found`.
+3. **Fare & Payment Service (9 requests)**:
    - `Calculate Fare Estimate (Normal)` $\rightarrow$ formula: $(200 + (6 \text{km} \times 80)) \times 1.0 = 680 \text{ LKR}$.
-   - `Calculate Fare Estimate (Peak Hour Surge)` $\rightarrow$ formula: $(200 + (6 \times 80)) \times 1.25 = 850 \text{ LKR}$.
+   - `Calculate Fare Estimate (Peak Hour Surge)` $\rightarrow$ formula: $(200 + (6 \times 80)) \times 1.5 = 1020 \text{ LKR}$.
+   - `Process Simulated Payment (Direct)`.
+   - `Get Official Digital Receipt`.
+   - `Get Payment by Ride ID`.
+   - `Get All Payments List`.
    - `[Negative] Simulated Payment Failure` $\rightarrow$ simulates card decline and verifies `402 Payment Required`.
-4. **Ride Management Service (E2E Integration)**:
-   - `1. Request Ride` $\rightarrow$ queries Fare Service & Driver Service, auto-assigns driver, status becomes `ASSIGNED`.
-   - `2. Driver Accepts Ride` $\rightarrow$ status becomes `ACCEPTED`.
-   - `3. Driver Starts Ride` $\rightarrow$ status becomes `IN_PROGRESS`.
-   - `4. Driver Completes Ride` $\rightarrow$ status becomes `COMPLETED`, automatically triggers Payment Service to bill 680 LKR and generates digital receipt `REC-YYYYMMDD-XXXX`.
-   - `[Negative] Invalid State Transition` $\rightarrow$ starting completed ride returns `400 Bad Request`.
-   - `[Negative] Cancel Completed Ride` $\rightarrow$ returns `400 Bad Request`.
+   - `[Negative] Digital Receipt Not Found` $\rightarrow$ verifies `404 Not Found`.
+   - `[Negative] Invalid Fare Calculation - Negative Distance` $\rightarrow$ verifies `400 Bad Request`.
+4. **Ride Management Service (13 requests)**:
+   - `1. Request Ride (E2E Auto Assignment)` $\rightarrow$ queries Fare & Driver services, auto-assigns driver, status becomes `ASSIGNED`.
+   - `2. Get Ride Details`.
+   - `3. Driver Accepts Ride` $\rightarrow$ status becomes `ACCEPTED`.
+   - `4. Driver Starts Ride` $\rightarrow$ status becomes `IN_PROGRESS` (locks driver to `ON_TRIP`).
+   - `5. Complete Ride` $\rightarrow$ status becomes `COMPLETED`, automatically triggers Payment Service and releases driver.
+   - `6. Cancel Ride` $\rightarrow$ releases driver to `AVAILABLE` and sets status to `CANCELLED`.
+   - `Get Ride History by Passenger`.
+   - `Get Ride History by Driver`.
+   - `[Negative] Invalid State Transition - Start Completed Ride` $\rightarrow$ returns `400 Bad Request`.
+   - `[Negative] Cannot Cancel Completed Ride` $\rightarrow$ returns `400 Bad Request`.
+   - `[Negative] Missing Pickup Location` $\rightarrow$ returns `400 Bad Request`.
+   - `[Negative] Ride Not Found` $\rightarrow$ returns `404 Not Found`.
+   - `[Negative] Driver Mismatch - Wrong Driver Accepts Ride` $\rightarrow$ returns `400 Bad Request`.
 
 ---
 
@@ -151,12 +180,17 @@ The collection includes test scripts that dynamically transfer generated IDs and
 
 The platform demonstrates robust defensive error handling across all services:
 
-1. **No Eligible Driver Available**: Requesting a ride in an unserved area or when all drivers are `OFFLINE` keeps the ride in `REQUESTED` status without failing ungracefully.
-2. **Invalid State Transition**: Attempting to complete a ride directly from `REQUESTED` or `ACCEPTED` without transitioning through `IN_PROGRESS` is rejected with `400 Bad Request`.
-3. **Cancellation of Completed Rides**: Completed rides cannot be cancelled, protecting transaction integrity.
-4. **Duplicate Entity Protection**: Registering with an existing email or license plate returns `409 Conflict`.
-5. **Unauthorized Access / Suspended Account**: Attempting to authenticate with a suspended account returns `403 Forbidden`.
-6. **Simulated Payment Failure**: When card declines or wallet funds are insufficient, payment is recorded as `FAILED` and returns `402 Payment Required`.
+1. **Role-Based Authorization Gate (`403 Forbidden`)**: Non-admin users attempting administrative operations (`GET /api/v1/users` or status modification) are strictly denied.
+2. **Suspended Account Gate (`403 Forbidden` / `400 Bad Request`)**: Suspended users cannot log in or request new rides.
+3. **No Eligible Driver Available**: Requesting a ride when no driver is available gracefully falls back to `REQUESTED` with `driverId: null` rather than failing.
+4. **Invalid State Transition (`400 Bad Request`)**: Attempting to complete a ride directly without starting, or re-starting a completed ride, is rejected.
+5. **Cancellation Integrity (`400 Bad Request`)**: Completed rides cannot be cancelled.
+6. **Driver Mismatch (`400 Bad Request`)**: Only the driver assigned to a ride can accept it.
+7. **Input Validation Failures (`400 Bad Request`)**: Missing pickup coordinates, negative distance calculations, or invalid email formats return descriptive validation errors.
+8. **Duplicate Entity Protection (`409 Conflict`)**: Duplicate email registration or duplicate driver license registration is prevented.
+9. **Authentication Failures (`401 Unauthorized`)**: Invalid credentials or malformed/expired JWT tokens are rejected.
+10. **Simulated Payment Failures (`402 Payment Required`)**: Cards simulated with failure numbers trigger immediate payment declined responses.
+11. **Resource Not Found (`404 Not Found`)**: Non-existent rides, users, drivers, or receipts return clean 404 responses.
 
 ---
 
