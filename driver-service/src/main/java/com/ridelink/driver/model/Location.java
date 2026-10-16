@@ -1,20 +1,27 @@
 package com.ridelink.driver.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Location {
     private Double latitude;
     private Double longitude;
     private String address;
     @Builder.Default
     private Instant updatedAt = Instant.now();
+
+    public Location() {
+        this.updatedAt = Instant.now();
+    }
+
+    public Location(Double latitude, Double longitude, String address, Instant updatedAt) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.updatedAt = updatedAt != null ? updatedAt : Instant.now();
+    }
 }

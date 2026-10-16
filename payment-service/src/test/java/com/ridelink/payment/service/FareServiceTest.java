@@ -60,4 +60,21 @@ class FareServiceTest {
         // (200 + (5 * 80)) * 1.25 = (200 + 400) * 1.25 = 750.0 LKR
         assertEquals(750.0, response.getEstimatedFare());
     }
+
+    @Test
+    @DisplayName("Should calculate fare for short distance")
+    void testCalculateEstimateShortDistance() {
+        FareEstimateRequest request = FareEstimateRequest.builder()
+                .distanceKm(1.5)
+                .serviceArea("Colombo")
+                .peakHour(false)
+                .build();
+
+        FareEstimateResponse response = fareService.calculateEstimate(request);
+
+        assertNotNull(response);
+        // (200 + (1.5 * 80)) * 1.0 = (200 + 120) = 320.0 LKR
+        assertEquals(320.0, response.getEstimatedFare());
+        assertEquals(120.0, response.getDistanceCharge());
+    }
 }

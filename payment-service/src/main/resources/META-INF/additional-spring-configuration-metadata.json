@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "app.fare.base-fare",
+      "type": "java.lang.Double",
+      "description": "Base starting fare amount for ride estimation"
+    },
+    {
+      "name": "app.fare.per-km-rate",
+      "type": "java.lang.Double",
+      "description": "Per-kilometer billing rate for ride trips"
+    },
+    {
+      "name": "app.fare.surge-multiplier",
+      "type": "java.lang.Double",
+      "description": "Dynamic surge pricing multiplier"
+    },
+    {
+      "name": "app.fare.currency",
+      "type": "java.lang.String",
+      "description": "Billing currency code"
+    }
+  ]
+}

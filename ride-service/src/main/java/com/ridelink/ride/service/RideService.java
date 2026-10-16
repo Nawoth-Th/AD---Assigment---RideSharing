@@ -1,5 +1,6 @@
 package com.ridelink.ride.service;
 
+import com.ridelink.ride.client.AccountServiceClient;
 import com.ridelink.ride.client.DriverServiceClient;
 import com.ridelink.ride.client.PaymentServiceClient;
 import com.ridelink.ride.dto.*;
@@ -9,7 +10,6 @@ import com.ridelink.ride.model.LocationPoint;
 import com.ridelink.ride.model.Ride;
 import com.ridelink.ride.model.RideStatus;
 import com.ridelink.ride.repository.RideRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,15 +19,30 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RideService {
 
     private final RideRepository rideRepository;
     private final DriverServiceClient driverServiceClient;
     private final PaymentServiceClient paymentServiceClient;
+    private final AccountServiceClient accountServiceClient;
+
+    public RideService(RideRepository rideRepository,
+                       DriverServiceClient driverServiceClient,
+                       PaymentServiceClient paymentServiceClient,
+                       AccountServiceClient accountServiceClient) {
+        this.rideRepository = rideRepository;
+        this.driverServiceClient = driverServiceClient;
+        this.paymentServiceClient = paymentServiceClient;
+        this.accountServiceClient = accountServiceClient;
+    }
 
     public RideResponse requestRide(RequestRideRequest request) {
         log.info("Processing ride request for passenger: {}", request.getPassengerId());
+
+        // 0. Interservice Verification: Validate passenger account is active and not suspended
+        if (!accountServiceClient.isPassengerEligible(request.getPassengerId())) {
+            throw new InvalidRideStateException("Cannot request ride: Passenger account is suspended or invalid.");
+        }
 
         // 1. Calculate distance between pickup and destination
         double distanceKm = calculateDistance(request.getPickupLocation(), request.getDestinationLocation());
@@ -121,6 +136,11 @@ public class RideService {
         ride.setStartedAt(Instant.now());
         ride.setUpdatedAt(Instant.now());
 
+        // Interservice Call: Notify Driver Service that driver is now ON_TRIP
+        if (ride.getDriverId() != null) {
+            driverServiceClient.notifyDriverTripStarted(ride.getDriverId());
+        }
+
         return mapToResponse(rideRepository.save(ride));
     }
 
@@ -143,7 +163,7 @@ public class RideService {
                 ride.getId(), ride.getPassengerId(), finalFare);
         ride.setPaymentId(paymentResponse.getId());
 
-        // Interservice Call 2: Notify Driver Service to restore driver status to AVAILABLE
+        // Interservice Call 2: Notify Driver Service to restore driver status to AVAILABLE and increment completed rides
         if (ride.getDriverId() != null) {
             driverServiceClient.notifyDriverRideCompleted(ride.getDriverId());
         }
@@ -168,9 +188,9 @@ public class RideService {
         ride.setCancelledAt(Instant.now());
         ride.setUpdatedAt(Instant.now());
 
-        // Release driver if one was assigned
+        // Interservice Call: Release driver back to AVAILABLE without incrementing total rides
         if (ride.getDriverId() != null) {
-            driverServiceClient.notifyDriverRideCompleted(ride.getDriverId());
+            driverServiceClient.notifyDriverReleased(ride.getDriverId());
         }
 
         return mapToResponse(rideRepository.save(ride));

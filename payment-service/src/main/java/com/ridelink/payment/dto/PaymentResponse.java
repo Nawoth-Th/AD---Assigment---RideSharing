@@ -2,17 +2,13 @@ package com.ridelink.payment.dto;
 
 import com.ridelink.payment.model.PaymentMethod;
 import com.ridelink.payment.model.PaymentStatus;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class PaymentResponse {
     private String id;
     private String rideId;
@@ -25,4 +21,21 @@ public class PaymentResponse {
     private String transactionReference;
     private String failureReason;
     private Instant processedAt;
+
+    public PaymentResponse() {
+    }
+
+    public PaymentResponse(String id, String rideId, String passengerId, double amount, String currency, PaymentStatus status, PaymentMethod paymentMethod, String receiptNumber, String transactionReference, String failureReason, Instant processedAt) {
+        this.id = id;
+        this.rideId = rideId;
+        this.passengerId = passengerId;
+        this.amount = amount;
+        this.currency = currency;
+        this.status = status;
+        this.paymentMethod = paymentMethod;
+        this.receiptNumber = receiptNumber;
+        this.transactionReference = transactionReference;
+        this.failureReason = failureReason;
+        this.processedAt = processedAt;
+    }
 }

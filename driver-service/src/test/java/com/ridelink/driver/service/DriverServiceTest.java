@@ -160,4 +160,100 @@ class DriverServiceTest {
         assertEquals(1, eligible.size());
         assertEquals("driver-100", eligible.get(0).getId());
     }
+
+    @Test
+    @DisplayName("Should throw DriverAlreadyExistsException when license number is already registered")
+    void testCreateProfileDuplicateLicense() {
+        CreateDriverProfileRequest request = CreateDriverProfileRequest.builder()
+                .userId("new-user")
+                .licenseNumber("DL-987654321")
+                .experienceYears(3)
+                .serviceArea("Colombo")
+                .vehicle(sampleVehicle)
+                .build();
+
+        when(driverProfileRepository.existsByUserId("new-user")).thenReturn(false);
+        when(driverProfileRepository.existsByLicenseNumber("DL-987654321")).thenReturn(true);
+
+        assertThrows(DriverAlreadyExistsException.class, () -> driverService.createProfile(request));
+        verify(driverProfileRepository, never()).save(any(DriverProfile.class));
+    }
+
+    @Test
+    @DisplayName("Should get driver profile by user ID")
+    void testGetProfileByUserId() {
+        when(driverProfileRepository.findByUserId("user-driver-1")).thenReturn(Optional.of(sampleProfile));
+
+        DriverResponse response = driverService.getProfileByUserId("user-driver-1");
+
+        assertNotNull(response);
+        assertEquals("driver-100", response.getId());
+        assertEquals("user-driver-1", response.getUserId());
+    }
+
+    @Test
+    @DisplayName("Should update vehicle details")
+    void testUpdateVehicle() {
+        when(driverProfileRepository.findById("driver-100")).thenReturn(Optional.of(sampleProfile));
+        when(driverProfileRepository.save(any(DriverProfile.class))).thenAnswer(i -> i.getArgument(0));
+
+        Vehicle newVehicle = Vehicle.builder()
+                .make("Honda")
+                .model("Civic")
+                .year(2023)
+                .licensePlate("WP-CAD-9999")
+                .color("Black")
+                .vehicleType(VehicleType.SEDAN)
+                .passengerCapacity(4)
+                .build();
+
+        com.ridelink.driver.dto.UpdateVehicleRequest request = new com.ridelink.driver.dto.UpdateVehicleRequest(newVehicle);
+        DriverResponse response = driverService.updateVehicle("driver-100", request);
+
+        assertNotNull(response);
+        assertEquals("WP-CAD-9999", response.getVehicle().getLicensePlate());
+        assertEquals("Honda", response.getVehicle().getMake());
+    }
+
+    @Test
+    @DisplayName("Should set driver status to ON_TRIP on trip start")
+    void testStartTrip() {
+        when(driverProfileRepository.findById("driver-100")).thenReturn(Optional.of(sampleProfile));
+        when(driverProfileRepository.save(any(DriverProfile.class))).thenAnswer(i -> i.getArgument(0));
+
+        driverService.startTrip("driver-100");
+
+        assertEquals(AvailabilityStatus.ON_TRIP, sampleProfile.getAvailabilityStatus());
+        verify(driverProfileRepository, times(1)).save(sampleProfile);
+    }
+
+    @Test
+    @DisplayName("Should release driver back to AVAILABLE without incrementing total rides")
+    void testReleaseDriver() {
+        sampleProfile.setAvailabilityStatus(AvailabilityStatus.ON_TRIP);
+        int initialRides = sampleProfile.getTotalRides();
+        when(driverProfileRepository.findById("driver-100")).thenReturn(Optional.of(sampleProfile));
+        when(driverProfileRepository.save(any(DriverProfile.class))).thenAnswer(i -> i.getArgument(0));
+
+        driverService.releaseDriver("driver-100");
+
+        assertEquals(AvailabilityStatus.AVAILABLE, sampleProfile.getAvailabilityStatus());
+        assertEquals(initialRides, sampleProfile.getTotalRides());
+        verify(driverProfileRepository, times(1)).save(sampleProfile);
+    }
+
+    @Test
+    @DisplayName("Should increment rides completed and set status to AVAILABLE")
+    void testIncrementRidesCompleted() {
+        sampleProfile.setAvailabilityStatus(AvailabilityStatus.ON_TRIP);
+        int initialRides = sampleProfile.getTotalRides();
+        when(driverProfileRepository.findById("driver-100")).thenReturn(Optional.of(sampleProfile));
+        when(driverProfileRepository.save(any(DriverProfile.class))).thenAnswer(i -> i.getArgument(0));
+
+        driverService.incrementRidesCompleted("driver-100");
+
+        assertEquals(AvailabilityStatus.AVAILABLE, sampleProfile.getAvailabilityStatus());
+        assertEquals(initialRides + 1, sampleProfile.getTotalRides());
+        verify(driverProfileRepository, times(1)).save(sampleProfile);
+    }
 }

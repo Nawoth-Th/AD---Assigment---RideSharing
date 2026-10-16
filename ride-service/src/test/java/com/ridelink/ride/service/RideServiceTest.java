@@ -1,5 +1,6 @@
 package com.ridelink.ride.service;
 
+import com.ridelink.ride.client.AccountServiceClient;
 import com.ridelink.ride.client.DriverServiceClient;
 import com.ridelink.ride.client.PaymentServiceClient;
 import com.ridelink.ride.dto.*;
@@ -37,6 +38,9 @@ class RideServiceTest {
     @Mock
     private PaymentServiceClient paymentServiceClient;
 
+    @Mock
+    private AccountServiceClient accountServiceClient;
+
     @InjectMocks
     private RideService rideService;
 
@@ -59,6 +63,8 @@ class RideServiceTest {
                 .estimatedFare(760.0)
                 .status(RideStatus.REQUESTED)
                 .build();
+
+        lenient().when(accountServiceClient.isPassengerEligible(anyString())).thenReturn(true);
     }
 
     @Test
@@ -97,6 +103,7 @@ class RideServiceTest {
         assertEquals("passenger-10", response.getPassengerId());
         assertEquals("driver-20", response.getDriverId());
         assertEquals(RideStatus.ASSIGNED, response.getStatus());
+        verify(accountServiceClient, times(1)).isPassengerEligible("passenger-10");
     }
 
     @Test
@@ -131,6 +138,22 @@ class RideServiceTest {
     }
 
     @Test
+    @DisplayName("Should reject ride request when passenger account is suspended (Negative Scenario)")
+    void testRequestRideSuspendedPassenger() {
+        RequestRideRequest request = RequestRideRequest.builder()
+                .passengerId("suspended-passenger")
+                .pickupLocation(pickup)
+                .destinationLocation(destination)
+                .serviceArea("Colombo")
+                .build();
+
+        when(accountServiceClient.isPassengerEligible("suspended-passenger")).thenReturn(false);
+
+        assertThrows(InvalidRideStateException.class, () -> rideService.requestRide(request));
+        verify(rideRepository, never()).save(any(Ride.class));
+    }
+
+    @Test
     @DisplayName("Should successfully transition through valid ride lifecycle")
     void testValidRideLifecycle() {
         sampleRide.setStatus(RideStatus.ASSIGNED);
@@ -141,10 +164,11 @@ class RideServiceTest {
         RideResponse accepted = rideService.acceptRide("ride-001", "driver-20");
         assertEquals(RideStatus.ACCEPTED, accepted.getStatus());
 
-        // 2. Start ride
+        // 2. Start ride (notifies driver service that driver is ON_TRIP)
         sampleRide.setStatus(RideStatus.ACCEPTED);
         RideResponse started = rideService.startRide("ride-001");
         assertEquals(RideStatus.IN_PROGRESS, started.getStatus());
+        verify(driverServiceClient, times(1)).notifyDriverTripStarted("driver-20");
 
         // 3. Complete ride with payment & driver notification
         sampleRide.setStatus(RideStatus.IN_PROGRESS);
@@ -161,6 +185,45 @@ class RideServiceTest {
         assertEquals(RideStatus.COMPLETED, completed.getStatus());
         assertEquals("pay-999", completed.getPaymentId());
         verify(driverServiceClient, times(1)).notifyDriverRideCompleted("driver-20");
+    }
+
+    @Test
+    @DisplayName("Should reject accept when driver ID does not match assigned driver (Negative Scenario)")
+    void testAcceptRideWrongDriver() {
+        sampleRide.setStatus(RideStatus.ASSIGNED);
+        sampleRide.setDriverId("driver-20");
+        when(rideRepository.findById("ride-001")).thenReturn(Optional.of(sampleRide));
+
+        assertThrows(InvalidRideStateException.class,
+                () -> rideService.acceptRide("ride-001", "driver-DIFFERENT"));
+    }
+
+    @Test
+    @DisplayName("Should assign driver when ride is in REQUESTED state")
+    void testAssignDriverSuccess() {
+        sampleRide.setStatus(RideStatus.REQUESTED);
+        sampleRide.setDriverId(null);
+        when(rideRepository.findById("ride-001")).thenReturn(Optional.of(sampleRide));
+        when(rideRepository.save(any(Ride.class))).thenAnswer(i -> i.getArgument(0));
+
+        RideResponse response = rideService.assignDriver("ride-001", new AssignDriverRequest("driver-99"));
+
+        assertEquals(RideStatus.ASSIGNED, response.getStatus());
+        assertEquals("driver-99", response.getDriverId());
+    }
+
+    @Test
+    @DisplayName("Should cancel active ride and release driver without incrementing rides")
+    void testCancelRideReleasesDriver() {
+        sampleRide.setStatus(RideStatus.ACCEPTED);
+        when(rideRepository.findById("ride-001")).thenReturn(Optional.of(sampleRide));
+        when(rideRepository.save(any(Ride.class))).thenAnswer(i -> i.getArgument(0));
+
+        RideResponse cancelled = rideService.cancelRide("ride-001", new CancelRideRequest("Change of plans"));
+
+        assertEquals(RideStatus.CANCELLED, cancelled.getStatus());
+        verify(driverServiceClient, times(1)).notifyDriverReleased("driver-20");
+        verify(driverServiceClient, never()).notifyDriverRideCompleted(anyString());
     }
 
     @Test

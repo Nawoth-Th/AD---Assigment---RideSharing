@@ -14,6 +14,9 @@ public class RestClientConfig {
     @Value("${app.services.payment-service-url:http://localhost:8084}")
     private String paymentServiceUrl;
 
+    @Value("${app.services.account-service-url:http://localhost:8081}")
+    private String accountServiceUrl;
+
     @Bean
     public RestClient driverRestClient() {
         return RestClient.builder()
@@ -25,6 +28,13 @@ public class RestClientConfig {
     public RestClient paymentRestClient() {
         return RestClient.builder()
                 .baseUrl(paymentServiceUrl)
+                .build();
+    }
+
+    @Bean
+    public RestClient accountRestClient() {
+        return RestClient.builder()
+                .baseUrl(accountServiceUrl)
                 .build();
     }
 }

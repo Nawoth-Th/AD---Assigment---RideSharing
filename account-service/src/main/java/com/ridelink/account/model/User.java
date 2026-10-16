@@ -1,9 +1,7 @@
 package com.ridelink.account.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -14,8 +12,6 @@ import java.time.Instant;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Document(collection = "users")
 public class User {
 
@@ -41,4 +37,20 @@ public class User {
 
     @LastModifiedDate
     private Instant updatedAt;
+
+    public User() {
+        this.status = AccountStatus.ACTIVE;
+    }
+
+    public User(String id, String name, String email, String passwordHash, String phone, Role role, AccountStatus status, Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.phone = phone;
+        this.role = role;
+        this.status = status != null ? status : AccountStatus.ACTIVE;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
 }

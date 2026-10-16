@@ -1,15 +1,19 @@
 package com.ridelink.ride.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class FareEstimateRequest {
     private double distanceKm;
     private String serviceArea;
+
+    public FareEstimateRequest() {
+    }
+
+    public FareEstimateRequest(double distanceKm, String serviceArea) {
+        this.distanceKm = distanceKm;
+        this.serviceArea = serviceArea;
+    }
 }

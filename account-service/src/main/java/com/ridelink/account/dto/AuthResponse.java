@@ -2,15 +2,11 @@ package com.ridelink.account.dto;
 
 import com.ridelink.account.model.AccountStatus;
 import com.ridelink.account.model.Role;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class AuthResponse {
     private String token;
     @Builder.Default
@@ -20,4 +16,17 @@ public class AuthResponse {
     private String email;
     private Role role;
     private AccountStatus status;
+
+    public AuthResponse() {
+    }
+
+    public AuthResponse(String token, String tokenType, String userId, String name, String email, Role role, AccountStatus status) {
+        this.token = token;
+        this.tokenType = tokenType;
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.status = status;
+    }
 }

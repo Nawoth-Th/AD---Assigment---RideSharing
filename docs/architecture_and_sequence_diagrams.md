@@ -50,18 +50,21 @@ graph TD
     Client -->|REST JSON| PM_Ctrl
 
     %% Interservice Synchronous REST Communication
+    RD_Svc -->|GET /api/v1/users/{id} (Check ACTIVE)| AC_Ctrl
     RD_Svc -->|GET /api/v1/drivers/eligible| DR_Ctrl
     RD_Svc -->|POST /api/v1/fares/estimate| PM_Ctrl
+    RD_Svc -->|POST /api/v1/drivers/{id}/start-trip| DR_Ctrl
     RD_Svc -->|POST /api/v1/payments/process| PM_Ctrl
     RD_Svc -->|POST /api/v1/drivers/{id}/complete-ride| DR_Ctrl
-    AC_Svc -.->|Token Validation| RD_Svc
+    RD_Svc -->|POST /api/v1/drivers/{id}/release| DR_Ctrl
+    AC_Svc -.->|JWT Bearer Authentication| Client
 ```
 
 ---
 
 ## 2. End-to-End Workflow Sequence Diagram
 
-This diagram demonstrates the complete ride-booking lifecycle, interservice coordination, state transitions, and simulated payment processing.
+This diagram demonstrates the complete ride-booking lifecycle, interservice coordination, state transitions, driver availability locking, and simulated payment processing.
 
 ```mermaid
 sequenceDiagram
@@ -75,7 +78,7 @@ sequenceDiagram
 
     Note over Passenger,Account: 1. Identity & Profile Setup
     Passenger->>Account: POST /api/v1/auth/register (Role: PASSENGER)
-    Account-->>Passenger: 201 Created (JWT Token & userId)
+    Account-->>Passenger: 201 Created (JWT Token & passengerId)
     Driver->>Account: POST /api/v1/auth/register (Role: DRIVER)
     Account-->>Driver: 201 Created (JWT Token & driverUserId)
 
@@ -87,7 +90,9 @@ sequenceDiagram
 
     Note over Passenger,RideSvc: 3. Ride Request & Interservice Queries
     Passenger->>RideSvc: POST /api/v1/rides/request (Pickup & Destination)
-    critical Interservice Coordination
+    critical Interservice Coordination & Eligibility
+        RideSvc->>Account: GET /api/v1/users/{passengerId} (Verify ACTIVE status)
+        Account-->>RideSvc: 200 OK (Status: ACTIVE)
         RideSvc->>PaymentSvc: POST /api/v1/fares/estimate (Distance: 6km)
         PaymentSvc-->>RideSvc: 200 OK (Estimated Fare: 680 LKR)
         RideSvc->>DriverSvc: GET /api/v1/drivers/eligible?serviceArea=Colombo
@@ -95,23 +100,35 @@ sequenceDiagram
     end
     RideSvc-->>Passenger: 201 Created (Status: ASSIGNED, driverId: driver-100)
 
-    Note over Driver,RideSvc: 4. Ride Lifecycle State Transitions
-    Driver->>RideSvc: POST /api/v1/rides/{id}/accept
+    Note over Driver,RideSvc: 4. Ride Acceptance & Trip Start
+    Driver->>RideSvc: POST /api/v1/rides/{id}/accept?driverId=driver-100
     RideSvc-->>Driver: 200 OK (Status: ACCEPTED)
     Driver->>RideSvc: POST /api/v1/rides/{id}/start
+    critical Driver Availability Lock
+        RideSvc->>DriverSvc: POST /api/v1/drivers/{id}/start-trip
+        DriverSvc-->>RideSvc: 200 OK (Driver Status: ON_TRIP)
+    end
     RideSvc-->>Driver: 200 OK (Status: IN_PROGRESS)
 
     Note over Driver,PaymentSvc: 5. Completion, Simulated Payment & Driver Release
     Driver->>RideSvc: POST /api/v1/rides/{id}/complete
-    critical Interservice Payment & Release
+    critical Interservice Payment & Driver Finalization
         RideSvc->>PaymentSvc: POST /api/v1/payments/process (Amount: 680 LKR)
         PaymentSvc-->>RideSvc: 201 Created (Receipt: REC-20260930-XXXX)
         RideSvc->>DriverSvc: POST /api/v1/drivers/{id}/complete-ride
-        DriverSvc-->>RideSvc: 204 No Content (Status back to AVAILABLE)
+        DriverSvc-->>RideSvc: 200 OK (totalRides+1, Status: AVAILABLE)
     end
     RideSvc-->>Driver: 200 OK (Status: COMPLETED, paymentId)
     Passenger->>PaymentSvc: GET /api/v1/payments/receipt/{receiptNumber}
     PaymentSvc-->>Passenger: 200 OK (Digital Receipt & Breakdown)
+
+    Note over Passenger,DriverSvc: 6. Alternative Flow: Ride Cancellation & Driver Release
+    opt Passenger / System Cancellation
+        Passenger->>RideSvc: POST /api/v1/rides/{id}/cancel
+        RideSvc->>DriverSvc: POST /api/v1/drivers/{id}/release
+        DriverSvc-->>RideSvc: 200 OK (Status restored to AVAILABLE)
+        RideSvc-->>Passenger: 200 OK (Status: CANCELLED)
+    end
 ```
 
 ---

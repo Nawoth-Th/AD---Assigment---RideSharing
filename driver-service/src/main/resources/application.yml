@@ -13,10 +13,11 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    persistAuthorization: true
   api-docs:
     path: /v3/api-docs
 
 logging:
   level:
-    com.ridelink.driver: DEBUG
-    org.springframework.data.mongodb: INFO
+    "[com.ridelink.driver]": DEBUG
+    "[org.springframework.data.mongodb]": INFO

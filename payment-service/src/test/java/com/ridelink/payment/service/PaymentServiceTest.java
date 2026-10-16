@@ -120,4 +120,36 @@ class PaymentServiceTest {
         assertThrows(ResourceNotFoundException.class,
                 () -> paymentService.getReceiptByReceiptNumber("NON_EXISTENT"));
     }
+
+    @Test
+    @DisplayName("Should retrieve payment by ride ID")
+    void testGetPaymentByRideIdSuccess() {
+        when(paymentRepository.findByRideId("ride-001")).thenReturn(Optional.of(samplePayment));
+
+        PaymentResponse response = paymentService.getPaymentByRideId("ride-001");
+
+        assertNotNull(response);
+        assertEquals("pay-101", response.getId());
+        assertEquals("ride-001", response.getRideId());
+    }
+
+    @Test
+    @DisplayName("Should throw ResourceNotFoundException when payment by ride ID not found")
+    void testGetPaymentByRideIdNotFound() {
+        when(paymentRepository.findByRideId("unknown-ride")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> paymentService.getPaymentByRideId("unknown-ride"));
+    }
+
+    @Test
+    @DisplayName("Should retrieve all payments")
+    void testGetAllPayments() {
+        when(paymentRepository.findAll()).thenReturn(java.util.List.of(samplePayment));
+
+        java.util.List<PaymentResponse> payments = paymentService.getAllPayments();
+
+        assertNotNull(payments);
+        assertEquals(1, payments.size());
+        assertEquals("pay-101", payments.get(0).getId());
+    }
 }
