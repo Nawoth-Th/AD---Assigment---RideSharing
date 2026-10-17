@@ -29,14 +29,22 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get user profile by ID", description = "Retrieves user details including role and account status")
+    @Operation(summary = "Step 04 - Get user profile by ID", description = "Retrieves user details including role and account status")
     public ResponseEntity<UserProfileResponse> getUserById(
             @Parameter(description = "User ID", example = "6ad14827495a0211f7495faf") @PathVariable("id") String id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Step 05 - Update user profile", description = "Updates name and phone number for an existing user")
+    public ResponseEntity<UserProfileResponse> updateProfile(
+            @Parameter(description = "User ID", example = "6ad14827495a0211f7495faf") @PathVariable("id") String id,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(id, request));
+    }
+
     @GetMapping
-    @Operation(summary = "Get all users (Admin operation)", description = "Lists all registered users. Requires ADMIN role or Bearer token.")
+    @Operation(summary = "Step 06 - Get all users (Admin operation)", description = "Lists all registered users. Requires ADMIN role or Bearer token.")
     public ResponseEntity<List<UserProfileResponse>> getAllUsers(
             @Parameter(description = "Optional JWT Bearer Token (or click Authorize at top)") @RequestHeader(value = "Authorization", required = false) String authHeader,
             @Parameter(description = "Optional Role Header (e.g. ADMIN)", example = "ADMIN") @RequestHeader(value = "X-User-Role", required = false) String roleHeader) {
@@ -44,16 +52,8 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update user profile", description = "Updates name and phone number for an existing user")
-    public ResponseEntity<UserProfileResponse> updateProfile(
-            @Parameter(description = "User ID", example = "6ad14827495a0211f7495faf") @PathVariable("id") String id,
-            @Valid @RequestBody UpdateProfileRequest request) {
-        return ResponseEntity.ok(userService.updateProfile(id, request));
-    }
-
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Update account status (Admin operation)", description = "Allows suspending or reactivating an account (ACTIVE / SUSPENDED). Requires ADMIN role or Bearer token.")
+    @Operation(summary = "Step 07 - Update account status (Admin operation)", description = "Allows suspending or reactivating an account (ACTIVE / SUSPENDED). Requires ADMIN role or Bearer token.")
     public ResponseEntity<UserProfileResponse> updateStatus(
             @Parameter(description = "User ID", example = "6ad14827495a0211f7495faf") @PathVariable("id") String id,
             @Valid @RequestBody UpdateStatusRequest request,
