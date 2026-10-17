@@ -21,7 +21,7 @@ public class FareController {
     }
 
     @PostMapping("/estimate")
-    @Operation(summary = "Calculate ride fare estimate", description = "Calculates fare based on distance (km), base rate, and surge factor, returning itemized breakdown")
+    @Operation(summary = "Step 01 - Calculate ride fare estimate", description = "Calculates fare based on distance (km), base rate, and surge factor, returning itemized breakdown")
     public ResponseEntity<FareEstimateResponse> getEstimate(@Valid @RequestBody FareEstimateRequest request) {
         return ResponseEntity.ok(fareService.calculateEstimate(request));
     }

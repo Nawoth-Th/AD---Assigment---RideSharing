@@ -27,58 +27,30 @@ public class DriverController {
     }
 
     @PostMapping
-    @Operation(summary = "Create driver operational profile", description = "Registers vehicle and operational details for an approved driver account")
+    @Operation(summary = "Step 01 - Create driver operational profile", description = "Registers vehicle and operational details for an approved driver account")
     public ResponseEntity<DriverResponse> createProfile(@Valid @RequestBody CreateDriverProfileRequest request) {
         DriverResponse response = driverService.createProfile(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get driver profile by ID", description = "Retrieves driver details, vehicle information, and availability status")
-    public ResponseEntity<DriverResponse> getProfileById(
-            @PathVariable("id") String id) {
-        return ResponseEntity.ok(driverService.getProfileById(id));
-    }
-
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "Get driver profile by User ID", description = "Retrieves operational profile linked to an account service User ID")
-    public ResponseEntity<DriverResponse> getProfileByUserId(
-            @PathVariable("userId") String userId) {
-        return ResponseEntity.ok(driverService.getProfileByUserId(userId));
-    }
-
-    @GetMapping
-    @Operation(summary = "List all drivers", description = "Retrieves all registered driver profiles")
-    public ResponseEntity<List<DriverResponse>> getAllDrivers() {
-        return ResponseEntity.ok(driverService.getAllDrivers());
-    }
-
-    @PatchMapping("/{id}/availability")
-    @Operation(summary = "Update availability status", description = "Allows driver or system to toggle state between AVAILABLE, ON_TRIP, and OFFLINE")
-    public ResponseEntity<DriverResponse> updateAvailability(
-            @PathVariable("id") String id,
-            @Valid @RequestBody UpdateAvailabilityRequest request) {
-        return ResponseEntity.ok(driverService.updateAvailability(id, request));
-    }
-
     @PatchMapping("/{id}/location")
-    @Operation(summary = "Update simulated GPS location", description = "Simulates driver's current coordinates and physical address")
+    @Operation(summary = "Step 02 - Update simulated GPS location", description = "Simulates driver's current coordinates and physical address")
     public ResponseEntity<DriverResponse> updateLocation(
             @PathVariable("id") String id,
             @Valid @RequestBody UpdateLocationRequest request) {
         return ResponseEntity.ok(driverService.updateLocation(id, request));
     }
 
-    @PutMapping("/{id}/vehicle")
-    @Operation(summary = "Update vehicle details", description = "Updates car make, model, license plate, color, and capacity")
-    public ResponseEntity<DriverResponse> updateVehicle(
+    @PatchMapping("/{id}/availability")
+    @Operation(summary = "Step 03 - Update availability status", description = "Allows driver or system to toggle state between AVAILABLE, ON_TRIP, and OFFLINE")
+    public ResponseEntity<DriverResponse> updateAvailability(
             @PathVariable("id") String id,
-            @Valid @RequestBody UpdateVehicleRequest request) {
-        return ResponseEntity.ok(driverService.updateVehicle(id, request));
+            @Valid @RequestBody UpdateAvailabilityRequest request) {
+        return ResponseEntity.ok(driverService.updateAvailability(id, request));
     }
 
     @GetMapping("/eligible")
-    @Operation(summary = "Retrieve eligible available drivers", description = "Core interservice endpoint called by Ride Management Service to locate available drivers by area/coordinates")
+    @Operation(summary = "Step 04 - Retrieve eligible available drivers", description = "Core interservice endpoint called by Ride Management Service to locate available drivers by area/coordinates")
     public ResponseEntity<List<DriverResponse>> getEligibleDrivers(
             @RequestParam(value = "serviceArea", required = false) String serviceArea,
             @RequestParam(value = "latitude", required = false) Double latitude,
@@ -86,24 +58,52 @@ public class DriverController {
         return ResponseEntity.ok(driverService.findEligibleAvailableDrivers(serviceArea, latitude, longitude));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Step 05 - Get driver profile by ID", description = "Retrieves driver details, vehicle information, and availability status")
+    public ResponseEntity<DriverResponse> getProfileById(
+            @PathVariable("id") String id) {
+        return ResponseEntity.ok(driverService.getProfileById(id));
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Step 06 - Get driver profile by User ID", description = "Retrieves operational profile linked to an account service User ID")
+    public ResponseEntity<DriverResponse> getProfileByUserId(
+            @PathVariable("userId") String userId) {
+        return ResponseEntity.ok(driverService.getProfileByUserId(userId));
+    }
+
+    @PutMapping("/{id}/vehicle")
+    @Operation(summary = "Step 07 - Update vehicle details", description = "Updates car make, model, license plate, color, and capacity")
+    public ResponseEntity<DriverResponse> updateVehicle(
+            @PathVariable("id") String id,
+            @Valid @RequestBody UpdateVehicleRequest request) {
+        return ResponseEntity.ok(driverService.updateVehicle(id, request));
+    }
+
     @PostMapping("/{id}/start-trip")
-    @Operation(summary = "Notify driver trip started", description = "Interservice callback to set driver availability to ON_TRIP")
+    @Operation(summary = "Step 08 - Notify driver trip started", description = "Interservice callback to set driver availability to ON_TRIP")
     public ResponseEntity<Void> startTrip(@PathVariable("id") String id) {
         driverService.startTrip(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/release")
-    @Operation(summary = "Release driver availability", description = "Interservice callback to restore driver availability to AVAILABLE without incrementing total rides (used on ride cancellation)")
+    @Operation(summary = "Step 09 - Release driver availability", description = "Interservice callback to restore driver availability to AVAILABLE without incrementing total rides (used on ride cancellation)")
     public ResponseEntity<Void> releaseDriver(@PathVariable("id") String id) {
         driverService.releaseDriver(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/complete-ride")
-    @Operation(summary = "Notify driver ride completion", description = "Interservice callback to reset driver status to AVAILABLE and increment total rides")
+    @Operation(summary = "Step 10 - Notify driver ride completion", description = "Interservice callback to reset driver status to AVAILABLE and increment total rides")
     public ResponseEntity<Void> completeRide(@PathVariable("id") String id) {
         driverService.incrementRidesCompleted(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    @Operation(summary = "Step 11 - List all drivers", description = "Retrieves all registered driver profiles")
+    public ResponseEntity<List<DriverResponse>> getAllDrivers() {
+        return ResponseEntity.ok(driverService.getAllDrivers());
     }
 }

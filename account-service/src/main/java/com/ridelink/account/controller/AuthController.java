@@ -21,21 +21,21 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Register new passenger or driver", description = "Creates a new user account with hashed password and returns an auth token")
+    @Operation(summary = "Step 01 - Register new passenger or driver", description = "Creates a new user account with hashed password and returns an auth token")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")
-    @Operation(summary = "User login", description = "Authenticates user credentials and issues a JWT token")
+    @Operation(summary = "Step 02 - User login", description = "Authenticates user credentials and issues a JWT token")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/validate")
-    @Operation(summary = "Validate token", description = "Verifies JWT token integrity, expiration, and user account status")
+    @Operation(summary = "Step 03 - Validate token", description = "Verifies JWT token integrity, expiration, and user account status")
     public ResponseEntity<TokenValidationResponse> validateToken(@Valid @RequestBody TokenValidationRequest request) {
         TokenValidationResponse response = authService.validateToken(request);
         return ResponseEntity.ok(response);

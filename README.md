@@ -751,7 +751,7 @@ Configuration is managed via [`.env`](file:///g:/AD%20-%20Ride%20Sharing%20Appli
 # ========================================================
 
 # Option A: Single MongoDB Atlas Cluster URI (Default)
-MONGODB_URI=mongodb+srv://ridelink-admin:6AShujEoGGr8GMOs@ridelink-db.c3duzqw.mongodb.net/?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://*******************************************.mongodb.net/?retryWrites=true&w=majority
 
 # Option B: Lecturer Recommendation - Role-Restricted Database Users (Optional)
 # ACCOUNT_MONGODB_URI=mongodb+srv://account-user:<password>@ridelink-db.c3duzqw.mongodb.net/ridelink_account_db?retryWrites=true&w=majority

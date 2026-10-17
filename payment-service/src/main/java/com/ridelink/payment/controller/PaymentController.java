@@ -26,32 +26,32 @@ public class PaymentController {
 
 
     @PostMapping("/process")
-    @Operation(summary = "Process simulated payment", description = "Records a simulated transaction, generates receipt number, and confirms payment status")
+    @Operation(summary = "Step 02 - Process simulated payment", description = "Records a simulated transaction, generates receipt number, and confirms payment status")
     public ResponseEntity<PaymentResponse> processPayment(@Valid @RequestBody ProcessPaymentRequest request) {
         PaymentResponse response = paymentService.processPayment(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/receipt/{receiptNumber}")
+    @Operation(summary = "Step 03 - Get official digital receipt", description = "Retrieves formatted receipt with payment breakdown and transaction reference")
+    public ResponseEntity<ReceiptResponse> getReceipt(@PathVariable("receiptNumber") String receiptNumber) {
+        return ResponseEntity.ok(paymentService.getReceiptByReceiptNumber(receiptNumber));
+    }
+
     @GetMapping("/{id}")
-    @Operation(summary = "Get payment by ID", description = "Retrieves payment status and transaction details")
+    @Operation(summary = "Step 04 - Get payment by ID", description = "Retrieves payment status and transaction details")
     public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable("id") String id) {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
     @GetMapping("/ride/{rideId}")
-    @Operation(summary = "Get payment for a ride", description = "Retrieves payment details by associated ride ID")
+    @Operation(summary = "Step 05 - Get payment for a ride", description = "Retrieves payment details by associated ride ID")
     public ResponseEntity<PaymentResponse> getPaymentByRideId(@PathVariable("rideId") String rideId) {
         return ResponseEntity.ok(paymentService.getPaymentByRideId(rideId));
     }
 
-    @GetMapping("/receipt/{receiptNumber}")
-    @Operation(summary = "Get official digital receipt", description = "Retrieves formatted receipt with payment breakdown and transaction reference")
-    public ResponseEntity<ReceiptResponse> getReceipt(@PathVariable("receiptNumber") String receiptNumber) {
-        return ResponseEntity.ok(paymentService.getReceiptByReceiptNumber(receiptNumber));
-    }
-
     @GetMapping
-    @Operation(summary = "List all payment records", description = "Retrieves all processed payment records across the platform")
+    @Operation(summary = "Step 06 - List all payment records", description = "Retrieves all processed payment records across the platform")
     public ResponseEntity<List<PaymentResponse>> getAllPayments() {
         return ResponseEntity.ok(paymentService.getAllPayments());
     }
